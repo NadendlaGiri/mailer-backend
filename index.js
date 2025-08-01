@@ -7,7 +7,31 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Allowed origins for CORS
+const allowedOrigins = [
+  "https://jobportal-frontend.web.app",
+  "http://localhost:3000",
+];
+
+// CORS middleware with whitelist
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // Allow requests with no origin (like curl, postman)
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
+// Handle preflight OPTIONS requests for all routes
+app.options("*", cors());
+
 app.use(bodyParser.json());
 
 // Subscribers saved in a JSON file
