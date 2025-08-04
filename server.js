@@ -47,6 +47,8 @@ app.post("/subscribe", async (req, res) => {
 
   try {
     const snapshot = await subscribersRef.where("email", "==", email).get();
+    console.log("Firestore query snapshot:", snapshot.size);
+
     if (!snapshot.empty) {
       return res.status(400).json({ message: "Email already subscribed" });
     }
