@@ -8,10 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const admin = require("firebase-admin");
-const serviceAccount = require("./firebaseKey.json");
+const firebaseConfigBase64 = process.env.FIREBASE_KEY_BASE64;
+if (!firebaseConfigBase64) {
+  throw new Error("❌ Missing FIREBASE_KEY_BASE64 env variable");
+}
+
+const firebaseKey = JSON.parse(
+  Buffer.from(firebaseConfigBase64, "base64").toString("utf-8")
+);
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(firebaseKey),
 });
 
 const db = admin.firestore();
