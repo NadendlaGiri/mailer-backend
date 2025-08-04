@@ -1,0 +1,65 @@
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const nodemailer = require("nodemailer");
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+let subscribers = [];
+
+// Subscribe API
+app.post("/subscribe", (req, res) => {
+  const { email } = req.body;
+  if (!email || subscribers.includes(email)) {
+    return res.status(400).json({ message: "Invalid or duplicate email" });
+  }
+  subscribers.push(email);
+  res.json({ message: "✅ Subscribed successfully!" });
+});
+
+// Send Email Alert API
+app.post("/send-alert", async (req, res) => {
+  const { subject, text } = req.body;
+
+  if (!subject || !text || subscribers.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "❌ Missing data or no subscribers" });
+  }
+
+  let transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  try {
+    for (const email of subscribers) {
+      await transporter.sendMail({
+        from: `"CareerConnect Alerts" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject,
+        html: `
+          <h2>${subject}</h2>
+          <p>${text}</p>
+          <p>🔗 <a href="https://careerconnect-jobportal.web.app" target="_blank">Visit CareerConnect</a></p>
+        `,
+      });
+    }
+    res.json({ message: "✅ Emails sent to all subscribers!" });
+  } catch (error) {
+    console.error("❌ Email error:", error);
+    res.status(500).json({ message: "Failed to send emails" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Mailer running on http://localhost:${PORT}`);
+});
