@@ -60,10 +60,13 @@ app.post("/send-alert", async (req, res) => {
         `,
       });
     }
-    res.json({ message: "✅ Emails sent to all subscribers!" });
+    // Make sure to respond here with success!
+    return res
+      .status(200)
+      .json({ message: "✅ Emails sent to all subscribers!" });
   } catch (error) {
     console.error("❌ Email error:", error);
-    res.status(500).json({ message: "Failed to send emails" });
+    return res.status(500).json({ message: "Failed to send emails" });
   }
 });
 
