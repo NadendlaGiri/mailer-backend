@@ -11,6 +11,13 @@ app.use(cors());
 app.use(bodyParser.json());
 
 let subscribers = [];
+app.use(
+  cors({
+    origin: "https://jobportal-frontend.web.app", // your React app's URL
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 // Subscribe API
 app.post("/subscribe", (req, res) => {
