@@ -7,6 +7,16 @@ const nodemailer = require("nodemailer");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const admin = require("firebase-admin");
+const serviceAccount = require("./firebaseKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = admin.firestore();
+const subscribersRef = db.collection("subscribers");
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -19,14 +29,24 @@ app.use(
   })
 );
 
-// Subscribe API
-app.post("/subscribe", (req, res) => {
+// subscribe API
+app.post("/subscribe", async (req, res) => {
   const { email } = req.body;
-  if (!email || subscribers.includes(email)) {
-    return res.status(400).json({ message: "Invalid or duplicate email" });
+
+  if (!email) return res.status(400).json({ message: "Invalid email" });
+
+  try {
+    const snapshot = await subscribersRef.where("email", "==", email).get();
+    if (!snapshot.empty) {
+      return res.status(400).json({ message: "Email already subscribed" });
+    }
+
+    await subscribersRef.add({ email });
+    res.json({ message: "✅ Subscribed successfully!" });
+  } catch (err) {
+    console.error("❌ Firestore error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-  subscribers.push(email);
-  res.json({ message: "✅ Subscribed successfully!" });
 });
 
 // Unsubscribe API
@@ -52,10 +72,8 @@ app.post("/unsubscribe", (req, res) => {
 app.post("/send-alert", async (req, res) => {
   const { subject, text } = req.body;
 
-  if (!subject || !text || subscribers.length === 0) {
-    return res
-      .status(400)
-      .json({ message: "❌ Missing data or no subscribers" });
+  if (!subject || !text) {
+    return res.status(400).json({ message: "❌ Missing data" });
   }
 
   let transporter = nodemailer.createTransport({
@@ -67,7 +85,14 @@ app.post("/send-alert", async (req, res) => {
   });
 
   try {
-    for (const email of subscribers) {
+    const snapshot = await subscribersRef.get();
+
+    if (snapshot.empty) {
+      return res.status(400).json({ message: "❌ No subscribers" });
+    }
+
+    for (const doc of snapshot.docs) {
+      const email = doc.data().email;
       await transporter.sendMail({
         from: `"CareerConnect Alerts" <${process.env.EMAIL_USER}>`,
         to: email,
@@ -79,13 +104,11 @@ app.post("/send-alert", async (req, res) => {
         `,
       });
     }
-    // Make sure to respond here with success!
-    return res
-      .status(200)
-      .json({ message: "✅ Emails sent to all subscribers!" });
-  } catch (error) {
-    console.error("❌ Email error:", error);
-    return res.status(500).json({ message: "Failed to send emails" });
+
+    res.status(200).json({ message: "✅ Emails sent to all subscribers!" });
+  } catch (err) {
+    console.error("❌ Email error:", err);
+    res.status(500).json({ message: "Failed to send emails" });
   }
 });
 
