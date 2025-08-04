@@ -29,6 +29,25 @@ app.post("/subscribe", (req, res) => {
   res.json({ message: "✅ Subscribed successfully!" });
 });
 
+// Unsubscribe API
+app.post("/unsubscribe", (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "❌ Email is required" });
+  }
+
+  const index = subscribers.indexOf(email);
+  if (index === -1) {
+    return res
+      .status(404)
+      .json({ message: "❌ Email not found in subscribers" });
+  }
+
+  subscribers.splice(index, 1); // Remove the email
+  return res.json({ message: "✅ Unsubscribed successfully!" });
+});
+
 // Send Email Alert API
 app.post("/send-alert", async (req, res) => {
   const { subject, text } = req.body;
