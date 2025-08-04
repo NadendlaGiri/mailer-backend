@@ -8,6 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const admin = require("firebase-admin");
+console.log("✅ Firebase Admin initialized successfully");
+
 const firebaseConfigBase64 = process.env.FIREBASE_KEY_BASE64;
 if (!firebaseConfigBase64) {
   throw new Error("❌ Missing FIREBASE_KEY_BASE64 env variable");
@@ -16,6 +18,7 @@ if (!firebaseConfigBase64) {
 const firebaseKey = JSON.parse(
   Buffer.from(firebaseConfigBase64, "base64").toString("utf-8")
 );
+console.log("✅ Decoded Firebase project ID:", firebaseKey.project_id);
 
 admin.initializeApp({
   credential: admin.credential.cert(firebaseKey),
