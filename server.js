@@ -41,12 +41,23 @@ const pool = new Pool({
 });
 
 // Subscribe endpoint — adds email if not exists
-app.get("/subscribers", async (req, res) => {
+app.post("/subscribe", async (req, res) => {
+  const { email } = req.body;
+  console.log("Subscribe request received for email:", email);
+  if (!email) return res.status(400).json({ message: "Invalid email" });
+
   try {
-    const result = await pool.query("SELECT email FROM subscribers");
-    res.status(200).json(result.rows.map((row) => row.email));
+    const result = await pool.query(
+      "INSERT INTO subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING RETURNING *",
+      [email]
+    );
+    console.log("Insert result:", result.rows);
+    if (result.rowCount === 0) {
+      return res.status(400).json({ message: "Email already subscribed" });
+    }
+    res.json({ message: "✅ Subscribed successfully!" });
   } catch (err) {
-    console.error("❌ Error fetching subscribers:", err);
+    console.error("❌ PostgreSQL error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
