@@ -12,7 +12,11 @@ const PORT = process.env.PORT || 8081;
 // ------------------------------
 app.use(
   cors({
-    origin: ["https://jobportal-frontend.web.app", "http://localhost:3000"],
+    origin: [
+      "https://jobportal-frontend.web.app",
+      "https://careerconnect-jobportal.web.app",
+      "http://localhost:3000",
+    ],
     methods: ["GET", "POST"],
   })
 );
