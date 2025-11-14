@@ -17,7 +17,9 @@ app.use(
       "https://careerconnect-jobportal.web.app",
       "http://localhost:3000",
     ],
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
