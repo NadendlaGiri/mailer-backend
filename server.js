@@ -33,7 +33,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Safe retry logic (fixes app crashing when Neon sleeps)
+// Safe retry logic (Neon may sleep)
 async function connectWithRetry() {
   try {
     const client = await pool.connect();
@@ -96,7 +96,7 @@ app.post("/unsubscribe", async (req, res) => {
 });
 
 // ------------------------------
-// 📌 Send Email Alert to Everyone
+// 📌 Send Email Alert to Everyone (RESEND SMTP)
 // ------------------------------
 app.post("/send-alert", async (req, res) => {
   try {
@@ -105,11 +105,14 @@ app.post("/send-alert", async (req, res) => {
     if (!subject || !text)
       return res.status(400).json({ message: "❌ Missing subject or text" });
 
+    // 🔥 UPDATED TO USE RESEND SMTP
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.resend.com",
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: "resend",
+        pass: process.env.RESEND_API_KEY,
       },
     });
 
@@ -120,7 +123,7 @@ app.post("/send-alert", async (req, res) => {
 
     for (const sub of subs.rows) {
       await transporter.sendMail({
-        from: `"CareerConnect Alerts" <${process.env.EMAIL_USER}>`,
+        from: `CareerConnect Alerts <alerts@resend.dev>`,
         to: sub.email,
         subject,
         html: `
