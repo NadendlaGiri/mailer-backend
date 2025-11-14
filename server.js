@@ -26,18 +26,26 @@ app.use(
 app.use(express.json());
 
 // ------------------------------
-// PostgreSQL Connection (Render Compatible)
+// PostgreSQL Connection (Neon + Render Safe)
 // ------------------------------
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // ❤️ main fix
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
-// Test connection on startup
-pool
-  .connect()
-  .then(() => console.log("✅ Connected to PostgreSQL"))
-  .catch((err) => console.error("❌ PostgreSQL Startup Error:", err));
+// Safe retry logic (fixes app crashing when Neon sleeps)
+async function connectWithRetry() {
+  try {
+    const client = await pool.connect();
+    console.log("✅ Connected to PostgreSQL");
+    client.release();
+  } catch (err) {
+    console.error("❌ PostgreSQL connection failed. Retrying in 5 seconds...");
+    setTimeout(connectWithRetry, 5000);
+  }
+}
+
+connectWithRetry();
 
 // ------------------------------
 // 📌 Subscribe Route
